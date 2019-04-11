@@ -7,7 +7,7 @@ PXRD-Plotter was made specifially to alleviate the afformentioned difficulties o
 
 <b>How to use:</b>
 
-<b>Loading in data</>
+<b>Loading in data</b>
 1. Complete a Reitveld refinement in TOPAS to your liking. 
 2. Right click the data set you want to export, and select "Export diff, I,"; save as a .txt file. do not modify this file.
 3. (optional) to also load in hkl ticks: go to the refined model you want hkl ticks for. click "hkl_ls". highlight the "2theta" column, right-click and select "copy all", and paste into a text file and save as a .txt.
