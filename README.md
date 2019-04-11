@@ -1,4 +1,4 @@
-# PXRD-Plotter
+# PyXRD-Plotter
 A simple piece of software that makes graphing of Powder X-ray Diffraction Reitveld refinement data quick and easy.
 
 Powder diffraction data can be difficult to accurately and elegantly display. This is especially true when attempting to plot all apsects of a Reitveld refined dataset, such as the difference curve, experimental data + fit data, and then hkl tick marks to indicate locations of expected Bragg reflections. This highly specific way of showing data makes plotting PXRD data time consuming and frustrating using typical graphing software.
