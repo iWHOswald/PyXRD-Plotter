@@ -7,7 +7,7 @@ PXRD-Plotter was made specifially to alleviate the afformentioned difficulties o
 
 Example of a Reitveld refinement dataset plotted:
 
-![PXRD-Plotter_example](PXRD-Plotter_example.png)
+![PXRD-Plotter_example](PXRD-Plotter_example.PNG)
 
 
 <b>How to use:</b>
