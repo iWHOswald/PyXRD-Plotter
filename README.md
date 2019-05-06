@@ -1,13 +1,14 @@
-# PyXRD-Plotter
+# PyXRD-Plotter V. 0.5
 A simple piece of software that makes graphing of Powder X-ray Diffraction Reitveld refinement data quick and easy.
 
 Powder diffraction data can be difficult to accurately and elegantly display. This is especially true when attempting to plot all apsects of a Reitveld refined dataset, such as the difference curve, experimental data + fit data, and then hkl tick marks to indicate locations of expected Bragg reflections. This highly specific way of showing data makes plotting PXRD data time consuming and frustrating using typical graphing software.
 
-PyXRD-Plotter was made specifially to alleviate the afformentioned difficulties of graphing PXRD data in a simple yet aesthetically pleasing manner. It is written in Python 3 using TKinter to generate the GUI and graphical elements generated using the MatPlotLib package.
+PyXRD-Plotter was made specifially to alleviate the afformentioned difficulties of graphing PXRD data in a simple yet aesthetically pleasing manner. It is written in Python 3 using TKinter to generate the GUI and graphical elements generated using the MatPlotLib package. The code has an algorithm to determine which data are included in the file (as topas can export a multitude of different columns of data) and figures out which are which - i.e. difference curve, x-axis (2theta) data, calculated curves, raw data, and more without any input from the user.
 
-Currently most functional version is xrdplotter.py; Does not allow multiple plots yet, this is the next big update.
+It then looks at the raw data in the file and attempts to plot the data in publication quality without any modification - of course there are options to modify the plot if necessary.
 
-Example of a Reitveld refinement dataset plotted:
+
+Example of a Reitveld refinement dataset plotted simply by loading in the data:
 
 ![PXRD-Plotter_example](PXRD-Plotter_example.PNG)
 
@@ -23,20 +24,27 @@ Example of a Reitveld refinement dataset plotted:
 
 <b>Tweaking your graph</b>
 
+The loaded in data will automatically populate the properties on the lefthand side based on the algorithm's calculation to most accurately display the data. These should be considered starting points when modifying these values further.
+
 <b>Note: Any changes require clicking the "update graph" button.</b>
 
 1. To modify x or y range, simply specify the values you want in the entry boxes provided. 
+2. To turn on specific tick mark styles, check the x or y (or both) boxes to modify the tick spacing.
+3. (optional) If you have hkl ticks to load in, you can turn them on or off, as well as modify they location relative to the data by changing the entry value.
 2. To disable the difference curve, check "disable difference curve"
 3. To move the difference curve (to avoid having too much whitespace or overlapping with the data curve), specify a value in the entry box. Use negative values to move the curve lower.
-4. To set one of the 3 specific template layouts, click "choose layout" button and select the type desired. 
+4. To set one of the 3 specific template layouts, click "Setup graph layout" button and select the type desired. (not working yet)
 
 <b>Saving your graph as an image</b>
 1. Click "save graph" button. Currently supports exporting as .png file.
 2. Figure will be trimmed to make sure there is no extra whitespace on the margins.
 
-
 <b>misc notes:</b>
 
 File format that are currently accepted are text files containing unmodified TOPAS exported data (for difference, data, and fit curves), and then hkl-containing text files.
 
-Future modifications features: allow multiple graphs, export as pdf or eps, modify major/minor ticks, the different layouts
+<b>Future changes</b>
+
+1. Allow scaling of graph aspect ratio
+2. Allow multiple plots
+3. Include labels for data
