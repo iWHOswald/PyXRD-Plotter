@@ -12,6 +12,10 @@ Example of a Reitveld refinement dataset plotted simply by loading in the data:
 
 ![PXRD-Plotter_example](PyXRDPlotter_img1.png)
 
+Example of the gui as is:
+
+![PyXRD-Plotter gui](PyXRDPlotterV0dot5gui.PNG)
+
 
 <b>How to use:</b>
 
