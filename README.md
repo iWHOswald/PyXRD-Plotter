@@ -5,6 +5,8 @@ Powder diffraction data can be difficult to accurately and elegantly display. Th
 
 PyXRD-Plotter was made specifially to alleviate the afformentioned difficulties of graphing PXRD data in a simple yet aesthetically pleasing manner. It is written in Python 3 using TKinter to generate the GUI and graphical elements generated using the MatPlotLib package.
 
+Currently most functional version is xrdplotter.py; Does not allow multiple plots yet, this is the next big update.
+
 Example of a Reitveld refinement dataset plotted:
 
 ![PXRD-Plotter_example](PXRD-Plotter_example.PNG)
