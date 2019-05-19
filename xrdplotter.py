@@ -7,6 +7,7 @@ from tkinter import ttk
 import matplotlib
 import matplotlib.ticker as ticker
 matplotlib.use("TkAgg")
+import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pylab import * #imports matplotlib (and ???)
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
@@ -32,6 +33,8 @@ def popupmsg(msg, poptitle):
     popup.resizable(width=False, height=False)
 
     popup.mainloop()
+
+
 
 
 
@@ -107,11 +110,14 @@ class Graph:
             self.hkl_file = filedialog.askopenfilename(initialdir="/", title="Select hkl file",
                                                    filetypes=(("hkl files", "*.txt"), ("all files", "*.*")))
             self.arr_hkl = np.genfromtxt(self.hkl_file, dtype='float', delimiter=',', skip_header=1)
+            self.ChangeLayout.configure(state=NORMAL)
             self.ticksButton.configure(state=NORMAL)
             self.ticksButton.configure(state=NORMAL)
             self.ticksButton.state(['!alternate'])
             self.ticksButton.state(['selected'])
+            self.firstGraphPlot = 0
             Graph.hkl_loaded = 1
+            StartPage.LoadGraph(self)
             #return Graph.hkl_loaded
 
     def fileOpen(self):
@@ -177,8 +183,19 @@ class Graph:
                 self.xy_cumchi2_col_loc = re.findall('[0-9]', str(np.where(arr == "xy_cumchi2")))[0] #column xy_cumchi2 is in
             else:
                 self.cumchi2_col = False
+
         self.NoFileChecker = 1
+
+        self.hkl_button.configure(state=NORMAL)
         self.UpdateGraph.configure(state=NORMAL)
+        self.SaveFig.configure(state=NORMAL)
+        self.LegendLocater.config(state=NORMAL)
+        self.LegendTextSize.configure(state=NORMAL)
+        self.AxesTextSize.configure(state=NORMAL)
+        self.AxeslblTextSize.configure(state=NORMAL)
+        self.xAxeslbl.configure(state=NORMAL)
+        self.yAxeslbl.configure(state=NORMAL)
+
         StartPage.dialogueBox(self)
         StartPage.LoadGraph(self)
 
@@ -204,13 +221,17 @@ class StartPage(Graph, tk.Frame):
         upload_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
         gridcounter += 1
 
-        ChangeLayout = ttk.Button(self, text="setup graph layout",
-                        command=lambda: controller.show_frame(GraphTemplateFrame))
-        ChangeLayout.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        self.hkl_button = ttk.Button(self, text="Open hkl file", command=lambda: self.hklOpen())
+        self.hkl_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        if self.NoFileChecker == 0:
+            self.hkl_button.configure(state=DISABLED)
         gridcounter += 1
 
-        hkl_button = ttk.Button(self, text="Open hkl file", command=lambda: self.hklOpen())
-        hkl_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        self.ChangeLayout = ttk.Button(self, text="setup hkl layout",
+                        command=lambda: controller.show_frame(GraphTemplateFrame))
+        self.ChangeLayout.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        if self.hkl_loaded == 0:
+            self.ChangeLayout.configure(state=DISABLED)
         gridcounter += 1
 
         graphPropertieslbl = Label(self, text="Graph properties:")
@@ -301,13 +322,25 @@ class StartPage(Graph, tk.Frame):
         ticksoffsetlbl = Label(self, text="hkl ticks offset:")
         ticksoffsetlbl.grid(sticky=W, row=gridcounter, column=0)
         self.ticksButtonOffset = ttk.Entry(self, width=5)
-        self.ticksButtonOffset.insert(-40, "-40")
+        self.ticksButtonOffset.insert(0, "0")
         self.ticksButtonOffset.grid(sticky=W, row=gridcounter, column=1)
         if Graph.hkl_loaded == 1:
             self.ticksButtonOffset.state(['!alternate'])
             self.ticksButtonOffset.state(['selected'])
         else:
             self.ticksButtonOffset.configure(state=DISABLED)
+        gridcounter += 1
+
+        hklticklengthlbl = Label(self, text="hkl ticks size:")
+        hklticklengthlbl.grid(sticky=W, row=gridcounter, column=0)
+        self.hklticklength = ttk.Entry(self, width=5)
+        self.hklticklength.insert(0, "0")
+        self.hklticklength.grid(sticky=W, row=gridcounter, column=1)
+        if Graph.hkl_loaded == 1:
+            self.hklticklength.state(['!alternate'])
+            self.hklticklength.state(['selected'])
+        else:
+            self.hklticklength.configure(state=DISABLED)
         gridcounter += 1
 
         DiffCurveButtonlbl = Label(self, text="Show difference curve:")
@@ -327,32 +360,65 @@ class StartPage(Graph, tk.Frame):
         self.DiffCurveOffset.grid(sticky=W, row=gridcounter, column=1)
         gridcounter += 1
 
+        CompressDiffLbl = Label(self, text="Compress Diff curve:")
+        CompressDiffLbl.grid(sticky=W, row=gridcounter, column=0)
+        self.CompressDiffEntry = ttk.Entry(self, width=5)
+        self.CompressDiffEntry.insert(1, "1")
+        self.CompressDiffEntry.config(state=DISABLED) # set initial state to disabled before graph is loaded
+        self.CompressDiffEntry.grid(sticky=W, row=gridcounter, column=1)
+        gridcounter += 1
+
     # this stuff takes care of setting up the legend. Location etc #
-        LegendLocater = ttk.Menubutton(self, text="Legend Position")
-        LegendLocater.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
-        LegendLocater.config(state=DISABLED)
-        LegendLocater.menu = Menu(LegendLocater, tearoff=0)
-        LegendLocater["menu"] = LegendLocater.menu
+        self.LegendLocater = ttk.Menubutton(self, text="Legend Position")
+        self.LegendLocater.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        self.LegendLocater.config(state=DISABLED)
+        self.LegendLocater.menu = Menu(self.LegendLocater, tearoff=0)
+        self.LegendLocater["menu"] = self.LegendLocater.menu
         self.LegendTopRight = tk.IntVar()
         self.LegendTopLeft = tk.IntVar()
         self.LegendBotLeft = tk.IntVar()
         self.LegendBotRight = tk.IntVar()
         self.LegendOff = tk.IntVar()
 
-        LegendLocater.menu.add_checkbutton(label="Top right", variable=self.LegendTopRight, command=lambda: StartPage.LegendTR(self))
-        LegendLocater.menu.add_checkbutton(label="Top left", variable=self.LegendTopLeft, command=lambda: StartPage.LegendTL(self))
-        LegendLocater.menu.add_checkbutton(label="Bottom right",variable=self.LegendBotRight, command=lambda: StartPage.LegendBR(self))
-        LegendLocater.menu.add_checkbutton(label="Bottom left", variable=self.LegendBotLeft, command=lambda: StartPage.LegendBL(self))
-        LegendLocater.menu.add_checkbutton(label="Turn legend off", variable=self.LegendOff, command=lambda: StartPage.LegendLO(self))
+        self.LegendLocater.menu.add_checkbutton(label="Top right", variable=self.LegendTopRight, command=lambda: StartPage.LegendTR(self))
+        self.LegendLocater.menu.add_checkbutton(label="Top left", variable=self.LegendTopLeft, command=lambda: StartPage.LegendTL(self))
+        self.LegendLocater.menu.add_checkbutton(label="Bottom right",variable=self.LegendBotRight, command=lambda: StartPage.LegendBR(self))
+        self.LegendLocater.menu.add_checkbutton(label="Bottom left", variable=self.LegendBotLeft, command=lambda: StartPage.LegendBL(self))
+        self.LegendLocater.menu.add_checkbutton(label="Turn legend off", variable=self.LegendOff, command=lambda: StartPage.LegendLO(self))
         gridcounter += 1
 
         LegendTextSizelbl = Label(self, text="Legend text size:")
         LegendTextSizelbl.grid(sticky=W, row=gridcounter, column=0)
         self.LegendTextSize = Entry(self, width=3)
         self.LegendTextSize.insert(18, "18")
-
         self.LegendTextSize.configure(state=DISABLED)
         self.LegendTextSize.grid(sticky=W, row=gridcounter, column=1)
+        gridcounter += 1
+
+        AxesTextSizelbl = Label(self, text="Axes text size:")
+        AxesTextSizelbl.grid(sticky=W, row=gridcounter, column=0)
+        self.AxesTextSize = Entry(self, width=3)
+        self.AxesTextSize.insert(18, "18")
+        self.AxesTextSize.configure(state=DISABLED)
+        self.AxesTextSize.grid(sticky=W, row=gridcounter, column=1)
+        gridcounter += 1
+
+        AxeslblTextSizelbl = Label(self, text="Axis label text size:")
+        AxeslblTextSizelbl.grid(sticky=W, row=gridcounter, column=0)
+        self.AxeslblTextSize = Entry(self, width=3)
+        self.AxeslblTextSize.insert(18, "18")
+        self.AxeslblTextSize.configure(state=DISABLED)
+        self.AxeslblTextSize.grid(sticky=W, row=gridcounter, column=1)
+        gridcounter += 1
+
+        self.xAxeslbl = ttk.Button(self, text="modify x-axis label", command=lambda: StartPage.popaxismsg(self, "Edit x-axis label:", "Edit x-axis label"))
+        self.xAxeslbl.grid(sticky=NW, row=gridcounter, column=0, pady=2, padx=2)
+        self.xAxeslbl.configure(state=DISABLED)
+        gridcounter += 1
+
+        self.yAxeslbl = ttk.Button(self, text="modify y-axis label", command=lambda: StartPage.popaxismsg(self))
+        self.yAxeslbl.grid(sticky=NW, row=gridcounter, column=0, pady=2, padx=2)
+        self.yAxeslbl.configure(state=DISABLED)
         gridcounter += 1
 
         self.UpdateGraph = ttk.Button(self, text="Update graph", command=lambda: StartPage.LoadGraph(self))
@@ -363,8 +429,10 @@ class StartPage(Graph, tk.Frame):
             self.UpdateGraph.configure(state=NORMAL)
         gridcounter += 1
 
-        SaveFig = ttk.Button(self, text="Save figure", command=lambda: StartPage.saveFigFunc(self))
-        SaveFig.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        self.SaveFig = ttk.Button(self, text="Save figure", command=lambda: StartPage.saveFigFunc(self))
+        self.SaveFig.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        if self.NoFileChecker == 0:
+            self.SaveFig.configure(state=DISABLED)
         gridcounter += 1
 
         dialoguelbl = Label(self, text="Datasets currently open:")
@@ -375,6 +443,60 @@ class StartPage(Graph, tk.Frame):
         dialoguelbl = Label(self, text=StartPage.dialogueBox(self))
         dialoguelbl.grid(sticky=NW, row=self.gridcounter2, column=0, pady=4, padx=4, columnspan=2)
         gridcounter += 1
+
+    def popaxismsg(self, msg, poptitle):
+        gridcounter = 0
+        popup = tk.Tk()
+        popup.wm_title(poptitle)
+        label = ttk.Label(popup, text=msg, justify='left')
+        label.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4, columnspan=2)
+        gridcounter += 1
+        # this stuff takes care of setting up the common labels. Location etc #
+        commonlabelmenu = ttk.Menubutton(popup, text="Common labels")
+        commonlabelmenu.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        commonlabelmenu.config(state=NORMAL)
+        commonlabelmenu.menu = Menu(commonlabelmenu, tearoff=0)
+        commonlabelmenu["menu"] = commonlabelmenu.menu
+        commonlabelmenuCu = tk.IntVar()
+        commonlabelmenuQ = tk.IntVar()
+        commonlabelmenud = tk.IntVar()
+        commonlabelmenuth = tk.IntVar()
+        Cu = 1
+        Q = 2
+        d = 3
+        th = 4
+
+        commonlabelmenu.menu.add_checkbutton(label="2θ (°, CuKα)", variable=commonlabelmenuCu,
+                                             command=lambda: StartPage.commonlabelfunc(self, Cu))
+        commonlabelmenu.menu.add_checkbutton(label="Q (Å-1)", variable=commonlabelmenuQ,
+                                             command=lambda: StartPage.commonlabelfunc(self, Q))
+        commonlabelmenu.menu.add_checkbutton(label="d (Å)", variable=commonlabelmenud,
+                                             command=lambda: StartPage.commonlabelfunc(self, d))
+        commonlabelmenu.menu.add_checkbutton(label="2θ (°)", variable=commonlabelmenuth,
+                                             command=lambda: StartPage.commonlabelfunc(self, th))
+        gridcounter += 1
+        B1 = ttk.Button(popup, text="Okay", command=popup.destroy)
+        B1.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4, columnspan=2)
+        popup.resizable(width=500, height=400)
+
+        popup.mainloop()
+
+    def commonlabelfunc(self, label):
+        if label == 1:
+            self.xlabel = str('dsgdsgds2$\Theta$ ($^\circ$, CuK$_{\\alpha}$)')
+            return self.xlabel
+        if label == 2:
+            self.xlabel = str('Q (r’$\AA$’$10-1$')
+            return self.xlabel
+
+        if label == 3:
+            self.xlabel = str('d (r’$\AA$’')
+            return self.xlabel
+
+        if label == 4:
+            self.xlabel = str('2$\Theta$ ($^\circ$)')
+            return self.xlabel
+
 
     def dialogueBox(self):
         if self.NoFileChecker == 0:
@@ -430,14 +552,19 @@ class StartPage(Graph, tk.Frame):
         self.LegendBool = 1
 
     def LoadGraph(self):
+        self.ylabel = 'Intensity (Counts)'
+        self.xlabel = '2$\Theta$ ($^\circ$, CuK$_{\\alpha}$)'
+
         #setup the graphical elements; fonts, colors, etc
         matplotlib.rc('font', size=self.allSized, **{'family': "arial"})  # controls default text sizes
-        matplotlib.rc('axes', titlesize=self.allSized)  # fontsize of the axes title
-        matplotlib.rc('axes', labelsize=self.allSized)  # fontsize of the x and y labels
+        matplotlib.rc('legend', fontsize=self.allSized)  # legend fontsize
         matplotlib.rc('xtick', labelsize=self.allSized)  # fontsize of the tick labels
         matplotlib.rc('ytick', labelsize=self.allSized)  # fontsize of the tick labels
-        matplotlib.rc('legend', fontsize=self.allSized)  # legend fontsize
+        matplotlib.rc('axes', titlesize=self.allSized)  # fontsize of the axes title
+        matplotlib.rc('axes', labelsize=self.allSized)  # fontsize of the x and y labels
         matplotlib.rc('figure', titlesize=self.allSized)  # fontsize of the figure title
+
+
         self.diffColor = "blue"
         self.fitColor = "red"
         self.dataColor = "black"
@@ -445,106 +572,143 @@ class StartPage(Graph, tk.Frame):
                                     unpack=True)
         self.f = Figure(figsize=(6, 6), dpi=100)
         self.ax1 = self.f.add_subplot(111)
-        self.ax1.set_ylabel('Intensity (Counts)')
-        self.ax1.set_xlabel('2$\Theta$ ($^\circ$, CuK$_{\\alpha}$)')
-        if self.x_col:
+
+        #self.ax1.ticklabel_format(axis='y', style='sci', scilimits=(-10,10), useOffset=True, useLocale=None,
+        #                      useMathText=True)
+
+        self.x_axis_min = np.min(
+            self.arr_graph[int(self.x_col_loc)])  # find min value of x-axis; to scale initial graph
+        self.x_axis_max = np.max(
+            self.arr_graph[int(self.x_col_loc)])  # find max value of x-axis; to scale initial graph
+        self.y_calc_min = np.min(
+            self.arr_graph[int(self.ycalc_col_loc)])  # find min value of calc curve; to scale initial graph
+        self.y_calc_max = np.max(
+            self.arr_graph[int(self.ycalc_col_loc)])  # find max value of calc curve; to scale initial graph
+        self.y_raw_min = np.min(
+            self.arr_graph[int(self.raw_col_loc)])  # find min value of raw curve; to scale initial graph
+        self.y_raw_max = np.max(
+            self.arr_graph[int(self.raw_col_loc)])  # find max value of raw curve; to scale initial graph
+
+        if self.diff_col:
+            self.diff_min = np.min(self.arr_graph[int(self.diff_col_loc)]) # find max value of diff curve; to scale initial graph
+            self.diff_max = np.max(self.arr_graph[int(self.diff_col_loc)]) # find max value of diff curve; to scale initial graph
+            self.diff_total = abs(self.diff_min) + abs(self.diff_max)
+            self.compressedDiff = (self.arr_graph[int(self.diff_col_loc)] * float(self.CompressDiffEntry.get()))
+
+        else:
+            self.diff_min = 0
+            self.diff_max = 0
+
+        if self.y_calc_max >= self.y_raw_max:  # figure out if the calculated or raw has the highest y value to correctly plot
+            y_max = int(round(self.y_calc_max))
+        else:
+            y_max = int(round(self.y_raw_max))
+
+        if self.x_col: #  this plots the lines
             if self.raw_col:
                 self.ax1.plot(self.arr_graph[int(self.x_col_loc)], self.arr_graph[1],
-                              color=self.dataColor, marker='o', lineStyle='None', label='Data', markersize=4)
+                              color=self.dataColor, marker='o', lineStyle='None', label='Data', markersize=2)
             else:
                 print("there is no raw data")
             if self.ycalc_col:
                 self.ax1.plot(self.arr_graph[int(self.x_col_loc)], self.arr_graph[int(self.ycalc_col_loc)],
-                              color=self.fitColor, lineStyle='-', label='Calculated')
+                              color=self.fitColor, lineStyle='-', label='Calculated', lineWidth='1.5')
             else:
                 print("there is no ycalc data")
             if self.diff_col:
-
-                if Graph.hkl_loaded == 1 and self.ticksButton.instate(['selected']):
-                    self.maxDiff = np.max(self.arr_graph[int(self.diff_col_loc)]) - (60)
-                   # self.maxDiff = self.maxDiff * 1.1
-
-                else:
-                    self.maxDiff = np.max(self.arr_graph[int(self.diff_col_loc)]) * 1.1
-                a = self.ax1.plot(self.arr_graph[int(self.x_col_loc)], self.arr_graph[int(self.diff_col_loc)] - self.maxDiff,
-                              color=self.diffColor, lineStyle='-', label='Difference')
-
+                self.diff_offset = int(self.diff_max)
+                a = self.ax1.plot(self.arr_graph[int(self.x_col_loc)], (self.arr_graph[int(self.diff_col_loc)]) - self.diff_max,
+                              color=self.diffColor, lineStyle='-', label='Difference', lineWidth='1')
             else:
                 print("there is no diff data")
+            if self.hkl_loaded == 1:
+                b = self.ax1.plot(self.arr_hkl, (self.arr_hkl - self.arr_hkl),
+                              color=self.fitColor, marker='|', label='hkl phase', linestyle='None', markerSize=14)
+            else:
+                print("there is no hkl data")
         else:
             print("there is no x-axis data")
 
-        if Graph.hkl_loaded == 1 and self.ticksButton.instate(['selected']):
-            print("graph.hkl_loaded is:")
-            print(Graph.hkl_loaded)
-            self.ax1.plot(self.arr_hkl, (self.arr_hkl - self.arr_hkl) + int(self.ticksButtonOffset.get()),
-                          color=self.fitColor, marker='|', label='hkl phase', linestyle='None', markerSize=20)
 
-
-        else:
-            pass
-            print("misses the iff to here")
-            print(Graph.hkl_loaded)
-
-        if self.firstGraphPlot == 0: #run this code to setup the initial graph
-
-            #  setup the axes
-
-            self.x_axis_min = np.min(self.arr_graph[int(self.x_col_loc)])  # find min value of x-axis; to scale initial graph
-            self.x_axis_max = np.max(self.arr_graph[int(self.x_col_loc)])  # find max value of x-axis; to scale initial graph
-            self.y_calc_min = np.min(self.arr_graph[int(self.ycalc_col_loc)])  # find min value of calc curve; to scale initial graph
-            self.y_calc_max = np.max(self.arr_graph[int(self.ycalc_col_loc)])  # find max value of calc curve; to scale initial graph
-            self.y_raw_min = np.min(self.arr_graph[int(self.raw_col_loc)])  # find min value of raw curve; to scale initial graph
-            self.y_raw_max = np.max(self.arr_graph[int(self.raw_col_loc)])  # find max value of raw curve; to scale initial graph
-
-            if self.y_calc_max >= self.y_raw_max:  # figure out if the calculated or raw has the highest y value to correctly plot
-                y_max = self.y_raw_max
-            else:
-                y_max = self.y_calc_max
-            y_max = y_max * 1.2  # this adds a wee bit of white space between highest datapoint and axis box
-            if self.diff_col:  # bring in diff data if it's there
-                self.diff_min = np.min(self.arr_graph[int(self.diff_col_loc)])
-                self.diff_max = np.max(self.arr_graph[int(self.diff_col_loc)])
-            else:
-                pass
+        if self.firstGraphPlot == 0: #run this code to setup the initial graph or loading in hkl ticks
 
             # setup the axes to be plotted based on graph data; tries to plot data as good as possible
-            self.xRangeLow.delete(0, 'end') #clear the entries in case previous ones were existing (like loading in a new graph)
-            self.xRangeHigh.delete(0, 'end')
-            self.yRangeLow.delete(0, 'end')
-            self.yRangeHigh.delete(0, 'end')
 
+            y_max = y_max * 1.1  # this adds a wee bit of white space between highest data point and axis box
             self.ax1.set_xlim(self.x_axis_min, self.x_axis_max)  # setup the graph to scale x-axes appropriately
-            self.xRangeLow.config(state=NORMAL)  # set initial state to enabled now that graph data is loaded
-            self.xRangeLow.insert(int(round(self.x_axis_min)), int(round(self.x_axis_min)))  # and stick starting x-min in
-            self.xRangeHigh.config(state=NORMAL)  # set initial state to enabled now that graph data is loaded
-            self.xRangeHigh.insert(int(round(self.x_axis_max)), int(round(self.x_axis_max)))  # enable and stick starting x-max in
 
             if self.diff_col: #this figures out the y min/max when a diff curve is present
-                self.total_diff = abs(self.diff_max) + abs(self.diff_min)
-                y_min = self.y_calc_min - (self.total_diff * 1.2)
+                if self.hkl_loaded == 1: # configure the state of things for the hkl loaded in
+                    self.ticksButton.configure(state=NORMAL)
+                    self.ticksButton.state(['!alternate'])
+                    self.ticksButton.state(['selected'])
+                    self.ticksButtonOffset.config(state=NORMAL)  # turn on when graph is loaded
+                    self.ticksButtonOffset.delete(0, 'end')
+                    self.hklticklength.configure(state=NORMAL)
+                    self.hklticklength.delete(0, 'end')
+
+                    for handle in a:
+                        handle.remove()
+                    for handle in b:
+                        handle.remove()
+
+                    for tick in self.arr_hkl:
+                        self.hkl_tick_length = round(abs(y_max) * 0.04)
+                        self.hkl_tick_min = round((abs(self.y_calc_min) - (self.hkl_tick_length * 1.4)))
+                        self.hkl_tick_max = self.hkl_tick_length + self.hkl_tick_min
+
+                        self.ax1.vlines(x=tick, ymin=self.hkl_tick_min, ymax=self.hkl_tick_max, linewidth=1, color='r')
+
+                    a = self.ax1.plot(self.arr_graph[int(self.x_col_loc)],
+                                      self.compressedDiff + ((-1*(abs(self.hkl_tick_min) + abs(self.diff_max)))*1.1),
+                                      color=self.diffColor, lineStyle='-', label='Difference', lineWidth='1')
+                    y_min = (abs(self.diff_min) + ((abs(self.hkl_tick_min) + abs(self.diff_max)))*1.1) * -1.1     # set y-min based on values of diff and hkl ticks
+
+                    self.ticksButtonOffset.insert(0, int((-1*(abs(self.hkl_tick_min))))) #  set the initial values for
+                    self.hklticklength.insert(0, int(self.hkl_tick_length))
+                    self.DiffCurveOffsetNew = (-1*(abs(self.hkl_tick_min) + abs(self.diff_max)))
+
+                else:
+                    self.hkl_tick_min = 0
+                    y_min = self.y_calc_min - (self.diff_total * 1.1)
+
                 self.ax1.set_ylim(y_min, y_max)  # setup the graph to scale y axes appropriately
-                self.DiffCurveOffsetNew = -1 * int(round(self.maxDiff))  # this figures out what the offset of the initial graph will be for difference curve
+
                 self.DiffCurveButton.configure(state=NORMAL)
                 self.DiffCurveButton.state(['!alternate'])
                 self.DiffCurveButton.state(['selected'])
+                self.CompressDiffEntry.config(state=NORMAL)  # set initial state to disabled before graph is loaded
                 self.DiffCurveOffset.config(state=NORMAL)  # set initial state to enabled now that graph data is loaded
                 self.DiffCurveOffset.delete(0, "") #clears any value here before
-                self.DiffCurveOffset.insert(self.DiffCurveOffsetNew, self.DiffCurveOffsetNew)  # set diff curve value in box
+                self.DiffCurveOffset.insert(0, int(((-1*(abs(self.hkl_tick_min) + abs(self.diff_max)))*1.1))) # set diff curve value in box
 
             elif self.diff_col == False: #this figures out the y min/max when no diff curve
                 y_min = self.y_calc_min * -1.2
+                if self.hkl_loaded == 1:
+                    y_min = y_min - self.hkl_tick_offset
+
                 self.ax1.set_ylim(y_min, y_max)  # setup the graph to scale y and x-axes appropriately
 
             elif self.diff_col and self.NoFileChecker > 1:
                 pass
 
+            #  The following strictly turns on the entry fields and fills them with the pre-determined values  #
+
+            self.xRangeLow.delete(0, 'end') #clear the entries in case previous ones were existing (like loading in a new graph)
+            self.xRangeHigh.delete(0, 'end')
+            self.yRangeLow.delete(0, 'end')
+            self.yRangeHigh.delete(0, 'end')
+            self.xRangeLow.config(state=NORMAL)  # set initial state to enabled now that graph data is loaded
+            self.xRangeLow.insert(0, int(round(self.x_axis_min)))  # and stick starting x-min in
+            self.xRangeHigh.config(state=NORMAL)  # set initial state to enabled now that graph data is loaded
+            self.xRangeHigh.insert(0, int(round(self.x_axis_max)))  # enable and stick starting x-max in
+
             self.yRangeLow.config(state=NORMAL)  # set initial state to disabled before graph is loaded
             self.yRangeLow.delete(0, 'end')  # clears any value here before
-            self.yRangeLow.insert(int(y_min), int(y_min))  # enable and stick starting x-max in
+            self.yRangeLow.insert(1, int(y_min))  # enable and stick starting x-max in
             self.yRangeHigh.config(state=NORMAL)  # set initial state to disabled before graph is loaded
             self.yRangeHigh.delete(0, 'end')  # clears any value here before
-            self.yRangeHigh.insert(int(y_max), int(y_max))  # enable and stick starting x-max in
+            self.yRangeHigh.insert(1, int(y_max))  # enable and stick starting x-max in
 
             self.ax1.xaxis.set_major_locator(ticker.AutoLocator())  # when first plotted, will use autolocator.
             self.ax1.xaxis.set_minor_locator(ticker.AutoMinorLocator())  # when first plotted, will use autolocator.
@@ -558,7 +722,6 @@ class StartPage(Graph, tk.Frame):
             self.yTickToggle.state(['!alternate'])
             self.yTickToggle.state(['selected'])
 
-
             self.xMjTick.config(state=NORMAL) #  turn on tick stuff
             self.xMiTick.config(state=NORMAL)
             self.yMjTick.config(state=NORMAL)
@@ -568,24 +731,30 @@ class StartPage(Graph, tk.Frame):
             self.yMjTick.delete(0, 'end')
             self.yMiTick.delete(0, 'end')
 
-
-
+            if y_max <= 100:
+                yMjTickCalc = 10
+            elif y_max > 100 and y_max <= 1000:
+                yMjTickCalc = 100
+            elif y_max > 1000 and y_max <= 10000:
+                yMjTickCalc = 1000
+            elif y_max > 10000 and y_max <= 100000:
+                yMjTickCalc = 10000
             xMjTickCalc = int(round(self.x_axis_max / 10))
-            xMiTickCalc = int(xMjTickCalc / 2)
-            yMjTickCalc = int(round(y_max / 10))
+            xMiTickCalc = float(xMjTickCalc / 2)
+            #yMjTickCalc = int(10 * round(y_max/ 10))
             yMiTickCalc = int(yMjTickCalc / 2)
 
-            self.xMjTick.insert(xMjTickCalc, str(xMjTickCalc))
-            self.xMiTick.insert(xMiTickCalc, str(xMiTickCalc))
-            self.yMjTick.insert(yMjTickCalc, str(yMjTickCalc))
-            self.yMiTick.insert(yMiTickCalc, str(yMiTickCalc))
+            self.xMjTick.insert(1, str(xMjTickCalc))
+            self.xMiTick.insert(1, str(xMiTickCalc))
+            self.yMjTick.insert(1, str(yMjTickCalc))
+            self.yMiTick.insert(1, str(yMiTickCalc))
 
-
+            self.firstGraphPlot = 1
 
         else: #run this code to update graph
-            #self.f = Figure(figsize=(6, 6), dpi=100)
-            # self.f.autolayout: True
-            #self.ax1 = self.f.add_subplot(111)
+           # self.f = Figure(figsize=(6, 6), dpi=100)
+           # self.f.autolayout: True
+           # self.ax1 = self.f.add_subplot(111)
             self.xRangeLowValue = int(self.xRangeLow.get())
             self.xRangeHighValue = int(self.xRangeHigh.get())
             self.yRangeLowValue = int(self.yRangeLow.get())
@@ -598,11 +767,26 @@ class StartPage(Graph, tk.Frame):
 
                 if self.DiffCurveButton.instate(['selected']) == TRUE: # checks if show diff is true
                     a = self.ax1.plot(self.arr_graph[int(self.x_col_loc)], # plots curve based on offset value
-                                           (self.arr_graph[int(self.diff_col_loc)]+self.DiffCurveOffsetValue),
-                                           color=self.diffColor, lineStyle='-', label='Difference')
+                                           (self.arr_graph[int(self.diff_col_loc)] * float(self.CompressDiffEntry.get())) + self.DiffCurveOffsetValue,
+                                           color=self.diffColor, lineStyle='-', label='Difference', linewidth='1')
+                else:
+                    print("curve has been deleted") # code w/ handle above has already deleted line, so just pass
+            if self.hkl_loaded == 1:
+                for handle in b: #removes the current diff curve as this function moves it based on the following
+                    handle.remove()
+                if self.ticksButton.instate(['selected']) == TRUE: # checks if show diff is
+                    self.ticksUpdateOffset = float(self.ticksButtonOffset.get())
+                    self.hkl_tick_length = round(abs(y_max) * 0.04)
+                    #self.hkl_tick_min = round((abs(self.y_calc_min) - (self.hkl_tick_length * 1.4)))
+                    self.hkl_tick_max = int(self.hklticklength.get()) + self.ticksUpdateOffset
+
+                    for tick in self.arr_hkl:
+                        self.ax1.vlines(x=tick, ymin=self.ticksUpdateOffset, ymax=self.hkl_tick_max, linewidth=1, color='r')
+
                     print(self.DiffCurveOffsetValue)
                 else:
                     print("curve has been deleted") # code w/ handle above has already deleted line, so just pass
+
             self.ax1.set_xlim(self.xRangeLowValue, self.xRangeHighValue)
             self.ax1.set_ylim(self.yRangeLowValue, self.yRangeHighValue)
             if self.xTickToggle.instate(['selected']) == TRUE:
@@ -619,11 +803,19 @@ class StartPage(Graph, tk.Frame):
                 self.ax1.yaxis.set_major_locator(ticker.AutoLocator())
                 self.ax1.yaxis.set_minor_locator(ticker.AutoMinorLocator())
 
+
         if self.LegendBool == 1:
             self.ax1.legend().remove()
         else:
             self.ax1.legend(loc=self.legLoc, prop={'size': self.LegendTextSize.get()}, frameon=False, bbox_transform=plt.gcf().transFigure)
 
+        #  these set the font sizes & labels for axes and axes labels
+        #'Intensity (Counts)'
+        #'2$\Theta$ ($^\circ$, CuK$_{\\alpha}$)'
+        self.ax1.set_ylabel(self.ylabel, size=self.AxeslblTextSize.get())
+        self.ax1.set_xlabel(self.xlabel, size=self.AxeslblTextSize.get())
+        print(self.xlabel)
+        self.ax1.tick_params(axis='both', which='major', labelsize=self.AxesTextSize.get())
 
 
         canvas = FigureCanvasTkAgg(self.f, self)
@@ -660,8 +852,10 @@ class StartPage(Graph, tk.Frame):
     def SetDiffCurvState(self):
         if self.DiffCurveButton.instate(['selected']):
             self.DiffCurveOffset.config(state=NORMAL)
+            self.CompressDiffEntry.config(state=NORMAL)
         elif self.DiffCurveButton.instate(['!selected']):
             self.DiffCurveOffset.config(state=DISABLED)
+            self.CompressDiffEntry.config(state=DISABLED)
 
     def saveFigFunc(self):
         self.SaveFig = filedialog.asksaveasfilename(initialdir="/", title="save figure name:",
@@ -693,7 +887,6 @@ class MultipleGraphPage(Graph, tk.Frame):
 
     def __init__(self, parent, controller): # setup the layout of the page
         tk.Frame.__init__(self, parent)
-        print("multiple graphs")
         self.graphCounter = 0
         self.LegendBool = 0
         self.legLoc = "upper right"
@@ -719,8 +912,8 @@ class MultipleGraphPage(Graph, tk.Frame):
         upload_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
         gridcounter += 1
 
-        hkl_button = ttk.Button(self, text="Open hkl file", command=lambda: self.hklOpen())
-        hkl_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
+        self.hkl_button = ttk.Button(self, text="Open hkl file", command=lambda: self.hklOpen())
+        self.hkl_button.grid(sticky=NW, row=gridcounter, column=0, pady=4, padx=4)
         gridcounter += 1
 
         graphPropertieslbl = Label(self, text="Graph properties:")
@@ -1102,8 +1295,65 @@ class GraphTemplateFrame(tk.Frame):
         counter = 0
 
         GraphPageButton = ttk.Button(self, text="Return to graph page", command=lambda: controller.show_frame(StartPage))
-        GraphPageButton.grid(sticky=NW, row=1, column=0, pady=4, padx=4)
+        GraphPageButton.grid(sticky=NW, row=counter, column=0, pady=4, padx=4)
         counter += 1
+
+        GraphLayoutlabel = Label(self, text="Please select a graphical layout.")
+        GraphLayoutlabel.grid(sticky=W+N, row=counter, column=0)
+        counter += 1
+
+        self.var = IntVar()
+        self.var.set(1)
+        self.Graphhklcombined = ttk.Radiobutton(self, text="combined ticks and data", variable=self.var, value=1)
+        self.Graphhklcombined.grid(sticky=W+N, row=counter, column=0)
+        counter += 1
+
+        self.GraphhklSeparated = ttk.Radiobutton(self, text="Separated ticks & data", variable=self.var, value=2)
+        self.GraphhklSeparated.grid(sticky=W+N, row=counter, column=0)
+        counter += 1
+
+
+        self.fig = plt.figure(figsize=(3, 3))
+        self.hkl_tick_file_count = 1
+        gs = self.fig.add_gridspec(2, 1, height_ratios=[self.hkl_tick_file_count, 20])
+        gs.update(wspace=0.025, hspace=0.025)  # set the spacing between axes.
+        ax1 = self.fig.add_subplot(gs[0, :])
+        ax2 = self.fig.add_subplot(gs[1:, :])
+        ax2.text(0.5, 0.5, 'separated ticks & data', ha='center', va='center', size=16, alpha=.75)
+
+        inner_grid = gridspec.GridSpecFromSubplotSpec(self.hkl_tick_file_count, 1, subplot_spec=gs[0], hspace=0,
+                                                      wspace=0.0)  # , hspace=1)
+
+        for i in range(self.hkl_tick_file_count):
+            ax3 = plt.subplot(inner_grid[i])
+            ax3.tick_params(axis='x', direction='in', top=False, bottom=False, labeltop=False, labelbottom=False)
+            ax3.tick_params(axis='y', direction='in', left=False, right=False, labelleft=False, labelright=False)
+            ax3.text(0.5, 0.5, 'hkl ticks', ha='center', va='center', size=6, alpha=.75, fontweight='bold')
+
+        ax1.tick_params(axis='x', direction='in', top=False, bottom=False, labeltop=False, labelbottom=False)
+        ax1.tick_params(axis='y', direction='in', left=False, right=False, labelleft=False, labelright=False)
+        ax2.tick_params(axis='x', direction='in', top=True, bottom=True, labeltop=False, labelbottom=False)
+        ax2.tick_params(axis='y', direction='in', left=True, right=True, labelleft=False, labelright=False)       # ax1 = plt.subplot(gs[0])
+        canvas = FigureCanvasTkAgg(self.fig, self)
+        canvas.draw()
+        #canvas._tkcanvas.grid(row=1, column=21, columnspan=1000, rowspan=1000, padx=50, pady=5)
+        canvas._tkcanvas.grid(row=3, column=3, padx=50, pady=5)
+
+
+        self.fig2 = plt.figure(figsize=(3, 3))
+        hkl_tick_file_count = 1
+        ax1 = self.fig2.add_subplot(111)
+
+        ax1.tick_params(axis='x', direction='in', top=True, bottom=True, labeltop=False, labelbottom=False)
+        ax1.tick_params(axis='y', direction='in', left=True, right=True, labelleft=False, labelright=False)
+        ax1.text(0.5, 0.5, 'Combined hkl & data', ha='center', va='center', size=16, alpha=.75)
+
+        canvas2 = FigureCanvasTkAgg(self.fig2, self)
+        canvas2.draw()
+        canvas2._tkcanvas.grid(row=3, column=2, padx=50, pady=5)
+
+        #  setup the other graph option
+
 
 
 
