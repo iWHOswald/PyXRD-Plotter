@@ -1,4 +1,4 @@
-# PyXRD-Plotter V. 0.5
+# PyXRD-Plotter V. 0.6
 A simple piece of software that makes graphing of Powder X-ray Diffraction Reitveld refinement data quick and easy.
 
 Powder diffraction data can be difficult to accurately and elegantly display. This is especially true when attempting to plot all apsects of a Reitveld refined dataset, such as the difference curve, experimental data + fit data, and then hkl tick marks to indicate locations of expected Bragg reflections. This highly specific way of showing data makes plotting PXRD data time consuming and frustrating using typical graphing software.
@@ -47,8 +47,17 @@ The loaded in data will automatically populate the properties on the lefthand si
 
 File format that are currently accepted are text files containing unmodified TOPAS exported data (for difference, data, and fit curves), and then hkl-containing text files.
 
-<b>Future changes</b>
+Version changes: 0.6:
 
-1. Allow scaling of graph aspect ratio
-2. Allow multiple plots
-3. Include labels for data
+1. Added error handling to data importing/plotting.
+2. Changed how ticks are drawn; no longer using the "|" character, rather it draws the lines instead.
+3. Allow for modifying tick lengths.
+4. Fixed the initial data importing to graph correctly when hkl files are imported.
+5. Moved dataset manager from the main frame to a separate frame, as this box could get quite long with more datasets + hkl files imported.
+6. Added compress difference curve function to allow for compressing or enlarging curve. This is mainly here for aestethics.
+
+Version 0.7 will include:
+
+1. Make modify x- and y-axis label function work.
+2. Fix dataset manager window to allow users to turn on off datasets/hkl ticks.
+3. constrain graph size; currently subtle changes happen to the axis lengths when modifying ticks or labels. Want it to be consistent.
