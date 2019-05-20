@@ -47,7 +47,7 @@ The loaded in data will automatically populate the properties on the lefthand si
 
 File format that are currently accepted are text files containing unmodified TOPAS exported data (for difference, data, and fit curves), and then hkl-containing text files.
 
-Version changes: 0.6:
+<b>Version changes: 0.6:</b>
 
 1. Added error handling to data importing/plotting.
 2. Changed how ticks are drawn; no longer using the "|" character, rather it draws the lines instead.
@@ -56,7 +56,7 @@ Version changes: 0.6:
 5. Moved dataset manager from the main frame to a separate frame, as this box could get quite long with more datasets + hkl files imported.
 6. Added compress difference curve function to allow for compressing or enlarging curve. This is mainly here for aestethics.
 
-Version 0.7 will include:
+<b>Version 0.7 will include:</b>
 
 1. Make modify x- and y-axis label function work.
 2. Fix dataset manager window to allow users to turn on off datasets/hkl ticks.
