@@ -10,7 +10,7 @@ It then looks at the raw data in the file and attempts to plot the data in publi
 
 Example of a Reitveld refinement dataset plotted simply by loading in the data:
 
-![PXRD-Plotter_example](PyXRDPlotter_img1.png)
+![PXRD-Plotter_example](test_exportPyxrd.png)
 
 Example of the gui as is:
 
