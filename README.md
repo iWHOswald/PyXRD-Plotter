@@ -7,6 +7,8 @@ PyXRD-Plotter was made specifially to alleviate the afformentioned difficulties 
 
 It then looks at the raw data in the file and attempts to plot the data in publication quality without any modification - of course there are options to modify the plot if necessary.
 
+<b>necessary packages: os, numpy, tkinter, matplotlib</b>
+
 
 Example of a Reitveld refinement dataset plotted simply by loading in the data:
 
