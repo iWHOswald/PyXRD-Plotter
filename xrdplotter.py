@@ -1330,14 +1330,14 @@ class GraphTemplateFrame(tk.Frame):
             ax3.tick_params(axis='y', direction='in', left=False, right=False, labelleft=False, labelright=False)
             ax3.text(0.5, 0.5, 'hkl ticks', ha='center', va='center', size=6, alpha=.75, fontweight='bold')
 
-        ax1.tick_params(axis='x', direction='in', top=False, bottom=False, labeltop=False, labelbottom=False)
-        ax1.tick_params(axis='y', direction='in', left=False, right=False, labelleft=False, labelright=False)
-        ax2.tick_params(axis='x', direction='in', top=True, bottom=True, labeltop=False, labelbottom=False)
-        ax2.tick_params(axis='y', direction='in', left=True, right=True, labelleft=False, labelright=False)       # ax1 = plt.subplot(gs[0])
-        canvas = FigureCanvasTkAgg(self.fig, self)
-        canvas.draw()
+        #ax1.tick_params(axis='x', direction='in', top=False, bottom=False, labeltop=False, labelbottom=False)
+        #ax1.tick_params(axis='y', direction='in', left=False, right=False, labelleft=False, labelright=False)
+        #ax2.tick_params(axis='x', direction='in', top=True, bottom=True, labeltop=False, labelbottom=False)
+        #ax2.tick_params(axis='y', direction='in', left=True, right=True, labelleft=False, labelright=False)       # ax1 = plt.subplot(gs[0])
+        #canvas = FigureCanvasTkAgg(self.fig, self)
+        #canvas.draw()
         #canvas._tkcanvas.grid(row=1, column=21, columnspan=1000, rowspan=1000, padx=50, pady=5)
-        canvas._tkcanvas.grid(row=3, column=3, padx=50, pady=5)
+        #canvas._tkcanvas.grid(row=3, column=3, padx=50, pady=5)
 
 
         self.fig2 = plt.figure(figsize=(3, 3))
@@ -1353,9 +1353,6 @@ class GraphTemplateFrame(tk.Frame):
         canvas2._tkcanvas.grid(row=3, column=2, padx=50, pady=5)
 
         #  setup the other graph option
-
-
-
 
 app = IoPlot()
 app.geometry("1000x600")
